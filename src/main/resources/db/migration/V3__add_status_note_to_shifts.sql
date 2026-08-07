@@ -1,0 +1,2 @@
+ALTER TABLE work_shifts
+ADD COLUMN status_note VARCHAR(255) DEFAULT NULL;

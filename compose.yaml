@@ -1,0 +1,30 @@
+services:
+  postgres-db:
+    image: 'postgres:16-alpine'
+    environment:
+      POSTGRES_DB: timetracker_db
+      POSTGRES_USER: ${DOCKER_DB_USERNAME}
+      POSTGRES_PASSWORD: ${DOCKER_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  rest-api-app:
+    build: .
+    container_name: timetracker_api_container
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres-db:5432/timetracker_db
+      DB_USERNAME: ${DOCKER_DB_USERNAME}
+      DB_PASSWORD: ${DOCKER_DB_PASSWORD}
+      JWT_SECRET: ${DOCKER_JWT_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    depends_on:
+      - postgres-db
+
+volumes:
+  postgres_data:
