@@ -42,10 +42,7 @@ public class AbsenceControllerV1 {
             @RequestParam("username") String username,
             @RequestBody @Valid AbsenceRequest request) {
 
-        // 1. Вызываем чистый сервис, передавая имя пользователя (никаких мапперов внутри сервиса!)
         AbsenceRecord rawAbsence = absenceService.createAbsence(username, request);
-
-        // 2. Контроллер сам бережно трансформирует сущность в DTO
         AbsenceResponse response = absenceMapper.toResponse(rawAbsence);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

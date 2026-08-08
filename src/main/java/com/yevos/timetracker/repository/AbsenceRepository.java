@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AbsenceRepository extends JpaRepository<AbsenceRecord, Long> {
 
-    //Магический JPQL-запрос для поиска всех наложений отпусков на выбранный месяц
     @Query("SELECT a FROM AbsenceRecord a WHERE a.user.id = :userId "
             + "AND a.startDate <= :end AND a.endDate >= :start")
     List<AbsenceRecord> findUserAbsencesInPeriod(

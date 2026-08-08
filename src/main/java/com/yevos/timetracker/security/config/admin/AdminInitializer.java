@@ -16,7 +16,6 @@ public class AdminInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    // 🟢 Spring Boot сам автоматически подставит сюда значения из application.properties
     @Value("${app.security.admin.username}")
     private String adminUsername;
     @Value("${app.security.admin.password}")
@@ -30,14 +29,12 @@ public class AdminInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Проверяем базу по динамическому имени из конфига
+
         if (!userRepository.existsByUsername(adminUsername)) {
             log.info("Admin account not found. Generating default administrator...");
 
             UserEntity admin = new UserEntity();
             admin.setUsername(adminUsername);
-
-            // 🟢 ПАРОЛЬ БОЛЬШЕ НЕ ХАРДКОДИТСЯ: берем его из переменной конфигурации
             admin.setPassword(passwordEncoder.encode(adminPassword));
             admin.setRole(Role.ADMIN);
             admin.setHourlyRate(BigDecimal.valueOf(100.00));

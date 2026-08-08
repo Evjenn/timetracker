@@ -17,8 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- *  Класс для автозакрытия забытых смен со специальной меткой для админа.
- * Так же для автозаполнения дней пропущенных по уважительной причине.
+ * Cron scheduler component designed for automated attendance auditing.
+ * Responsibilities include cascade-closing unsubmitted active work shifts
+ * with an administrative penalty flag, as well as auto-generating silent system logs
+ * for officially approved absence periods (vacations/sick leaves).
  */
 @Component
 @Slf4j
@@ -37,44 +39,34 @@ public class AttendanceAuditScheduler {
         this.absenceRepository = absenceRepository;
     }
 
-    // 🟢 Робот запускается в 20:00 по будням для аудита уходящего дня
     @Scheduled(cron = "0 0 20 * * MON-FRI")
     @Transactional
     public void executeDailyAudit() {
-        log.info("Starting daily attendance audit at 20:00...");
 
+        log.info("Starting daily attendance audit at 20:00...");
         List<UserEntity> users = userRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
         LocalDate today = LocalDate.now();
 
-        // 🟩 Главный метод стал тонким и понятным: просто цикл и вызовы помощников
         for (UserEntity user : users) {
-            // Ищем активную (незакрытую) смену пользователя на текущий момент
             Optional<WorkShift> activeShiftOpt = workShiftRepository
                     .findByUserIdAndEndTimeIsNull(user.getId());
 
             if (activeShiftOpt.isPresent()) {
-                // Если смена открыта, вытаскиваем её из коробки через .get()
-                // и отправляем на закрытие
                 processForgotToEndShift(activeShiftOpt.get(), user, now);
             } else {
-                // Если смены нет, передаем управление умному методу проверки пустого дня
                 processEmptyDay(user, today);
             }
         }
         log.info("Daily attendance audit successfully completed.");
     }
 
-    // ==========================================
-    // ВНУТРЕННИЕ МЕТОДЫ-ПОМОЩНИКИ (ИНКАПСУЛЯЦИЯ ЛОГИКИ)
-    // ==========================================
-
     /**
-     * Логика обработки сотрудников, которые забыли закрыть смену (и перерыв)
+     * Processing logic for employees who forgot to end their shift (and break interval).
      */
     private void processForgotToEndShift(WorkShift shift, UserEntity user, LocalDateTime now) {
 
-        // Каскадно закрываем перерыв, если он был брошен активным
+        // Cascade-close the break interval if it was left active
         if (shift.getCurrentBreakStartTime() != null) {
             int previousTotalBreaks = shift.getBreakDurationMinutes();
             shift.setBreakDurationMinutes(previousTotalBreaks + 60);
@@ -83,17 +75,16 @@ public class AttendanceAuditScheduler {
                     user.getUsername());
         }
 
-        // Принудительно закрываем саму смену концом дня
         shift.setEndTime(now);
         shift.setStatusNote("AUTO_CLOSED_AT_20_00");
-        shift.setProfit(BigDecimal.ZERO); // Обнуляем для будущего админского аудита
-
+        shift.setProfit(BigDecimal.ZERO);
         workShiftRepository.save(shift);
         log.warn("User '{}' forgot to end shift. Auto-closed with audit flag.", user.getUsername());
     }
 
     /**
-     * Логика проверки и создания алертов для сотрудников, которые вообще не вышли на работу
+     * Logic for verifying activity and generating alerts
+     * for employees who did not show up for work.
      */
     private void processEmptyDay(UserEntity user, LocalDate today) {
 
@@ -103,26 +94,22 @@ public class AttendanceAuditScheduler {
         List<WorkShift> todayShifts = workShiftRepository
                 .findUserShiftsInPeriod(user.getId(), dayStart, dayEnd);
 
-        // Если за день нет ни одной смены — проверяем причину
         if (todayShifts.isEmpty()) {
-
-            // Проверяем, нет ли у юзера официального пропуска на сегодняшнюю дату
+            // Check if the user has an official approved leave record for today's date
             Optional<AbsenceRecord> absenceOpt = absenceRepository
                     .findUserAbsencesInPeriod(user.getId(), today, today)
                     .stream()
                     .findFirst();
-
-            // 🟢 ИСПОЛЬЗУЕМ ФАБРИКУ: Сборка объекта ушла в отдельный понятный метод
             WorkShift systemShift = buildSystemShift(user, dayStart, dayEnd);
 
             if (absenceOpt.isPresent()) {
-                // Юзер официально в отпуске! Добавляем мирную системную пометку
+                // User is officially absent! Apply a non-penalizing system log entry
                 AbsenceRecord absence = absenceOpt.get();
                 systemShift.setStatusNote("APPROVED_ABSENCE: " + absence.getAbsenceType());
                 log.info("User '{}' is on official '{}'. Created silent system row.",
                         user.getUsername(), absence.getAbsenceType());
             } else {
-                // Оправданий нет — это классический забытый старт (алерт админу)
+                // Truant shift registration (triggers administrative screening alert)
                 systemShift.setStatusNote("FORGOTTEN_START_ALERT");
                 log.warn("User '{}' did not start any shift today. Created audit alert row.",
                         user.getUsername());
@@ -131,9 +118,6 @@ public class AttendanceAuditScheduler {
         }
     }
 
-    /**
-     * Фабричный метод для сборки пустой смены-заглушки (то, о чем подсказывала IntelliJ IDEA!)
-     */
     private WorkShift buildSystemShift(
             UserEntity user, LocalDateTime dayStart, LocalDateTime dayEnd) {
 

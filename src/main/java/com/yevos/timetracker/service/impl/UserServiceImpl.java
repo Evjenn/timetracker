@@ -30,7 +30,6 @@ public class UserServiceImpl implements UserService {
             throw new BaseException("Username '"
                     + request.getUsername() + "' is already taken", HttpStatus.CONFLICT);
         }
-
         UserEntity user = new UserEntity();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -48,7 +47,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BaseException("User not found", HttpStatus.NOT_FOUND));
 
         user.setHourlyRate(newRate);
-        return userRepository.save(user); // Возвращаем обновленный объект базы данных
+        return userRepository.save(user);
     }
 
     @Override
@@ -57,18 +56,14 @@ public class UserServiceImpl implements UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new BaseException("User not found", HttpStatus.NOT_FOUND));
 
-        // 1. Обновляем username, если он передан и изменился
         if (newUsername != null && !newUsername.isBlank()
                 && !newUsername.equals(user.getUsername())) {
-            // Проверяем, не занято ли новое имя кем-то другим
             if (userRepository.existsByUsername(newUsername)) {
                 throw new BaseException("Username '" + newUsername
                         + "' is already taken", HttpStatus.CONFLICT);
             }
             user.setUsername(newUsername);
         }
-
-        // 2. Обновляем email, если он передан
         if (newEmail != null && !newEmail.isBlank()) {
             user.setEmail(newEmail);
         }
@@ -82,13 +77,9 @@ public class UserServiceImpl implements UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new BaseException("User not found", HttpStatus.NOT_FOUND));
 
-        // Проверяем, совпадает ли введенный старый пароль с тем,
-        // что лежит в базе (он там захеширован)
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new BaseException("Invalid old password", HttpStatus.BAD_REQUEST);
         }
-
-        // Хешируем новый пароль и сохраняем его
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
@@ -99,7 +90,7 @@ public class UserServiceImpl implements UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new BaseException("User not found", HttpStatus.NOT_FOUND));
 
-        user.setEnabled(false); // Отключаем пользователя
+        user.setEnabled(false);
         userRepository.save(user);
     }
 }

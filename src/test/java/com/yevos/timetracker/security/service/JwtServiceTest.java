@@ -39,10 +39,8 @@ class JwtServiceTest {
         when(auth.getPrincipal()).thenReturn(user);
         when(user.getId()).thenReturn(1L);
         when(user.getUsername()).thenReturn("taras");
-
         // When
         String token = jwtService.generateToken(auth);
-
         // Then
         assertNotNull(token);
         assertEquals("taras", jwtService.extractUsername(token));
@@ -61,10 +59,8 @@ class JwtServiceTest {
         when(user.getAuthorities()).thenReturn(Collections.emptyList());
 
         String token = jwtService.generateToken(auth);
-
         // When
         boolean isValid = jwtService.isValid(token);
-
         // Then
         assertTrue(isValid);
     }
@@ -83,17 +79,14 @@ class JwtServiceTest {
         when(user.getAuthorities()).thenReturn(Collections.emptyList());
 
         String token = jwtService.generateToken(auth);
-
         // Artificially sleep for a tiny bit to guarantee expiration breach
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-
         // When
         boolean isValid = jwtService.isValid(token);
-
         // Then
         assertFalse(isValid); // Asserts that service safely caught exception and returned false
     }

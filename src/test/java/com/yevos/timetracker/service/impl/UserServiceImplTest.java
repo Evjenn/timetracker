@@ -54,11 +54,10 @@ class UserServiceImplTest {
         // Given
         when(userRepository.existsByUsername("taras_dev")).thenReturn(false);
         when(passwordEncoder.encode("RawPassword123")).thenReturn("encodedPasswordString");
-        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
         // When
         userService.registerUser(validRequest);
-
         // Then
         verify(userRepository, times(1)).existsByUsername("taras_dev");
         verify(passwordEncoder, times(1)).encode("RawPassword123");
@@ -70,7 +69,6 @@ class UserServiceImplTest {
     void registerUser_UsernameAlreadyExists_ThrowsException() {
         // Given
         when(userRepository.existsByUsername("taras_dev")).thenReturn(true);
-
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () -> {
             userService.registerUser(validRequest);
@@ -78,8 +76,6 @@ class UserServiceImplTest {
 
         assertEquals("Username 'taras_dev' is already taken", exception.getMessage());
         assertEquals(HttpStatus.CONFLICT, exception.getStatus());
-
-        // Защита: если юзер существует, шифровать пароль и сохранять его в базу нельзя!
         verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository, never()).save(any(UserEntity.class));
     }
@@ -91,19 +87,17 @@ class UserServiceImplTest {
         UserEntity existingUser = new UserEntity();
         existingUser.setId(1L);
         existingUser.setUsername("taras_dev");
-        existingUser.setHourlyRate(BigDecimal.valueOf(20.00)); // Старая ставка
-
-        BigDecimal newRate = BigDecimal.valueOf(35.50); // Новая ставка
+        existingUser.setHourlyRate(BigDecimal.valueOf(20.00));
+        BigDecimal newRate = BigDecimal.valueOf(35.50);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
         // When
         UserEntity updatedUser = userService.updateHourlyRate(1L, newRate);
-
         // Then
         assertNotNull(updatedUser);
-        assertEquals(newRate, updatedUser.getHourlyRate()); // Убеждаемся, что ставка обновилась
+        assertEquals(newRate, updatedUser.getHourlyRate());
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).save(existingUser);
     }
@@ -113,7 +107,6 @@ class UserServiceImplTest {
     void updateHourlyRate_UserNotFound_ThrowsException() {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () -> {
             userService.updateHourlyRate(1L, BigDecimal.valueOf(35.50));
@@ -137,11 +130,9 @@ class UserServiceImplTest {
         when(userRepository.existsByUsername("new_name")).thenReturn(false);
         when(userRepository.save(any(UserEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-
         // When
         UserEntity updatedUser = userService
                 .updateProfile(1L, "new_name", "new@example.com");
-
         // Then
         assertNotNull(updatedUser);
         assertEquals("new_name", updatedUser.getUsername());
@@ -162,15 +153,12 @@ class UserServiceImplTest {
         request.setNewPassword("rawNewPassword");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        // Симулируем, что проверка старого пароля прошла успешно
         when(passwordEncoder.matches("rawOldPassword", "encodedOldPassword"))
                 .thenReturn(true);
         when(passwordEncoder.encode("rawNewPassword"))
                 .thenReturn("encodedNewPassword");
-
         // When
         userService.updatePassword(1L, request);
-
         // Then
         verify(userRepository, times(1)).save(user);
         assertEquals("encodedNewPassword", user.getPassword());
@@ -183,17 +171,16 @@ class UserServiceImplTest {
         UserEntity user = new UserEntity();
         user.setId(1L);
         user.setUsername("taras_dev");
-        user.setEnabled(true); // Изначально активен
+        user.setEnabled(true);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
         // When
         userService.deactivateUser(1L);
-
         // Then
-        assertFalse(user.isEnabled()); // Проверяем, что флаг переключился в false
+        assertFalse(user.isEnabled());
         verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).save(user); // Проверяем, что изменения ушли в базу
+        verify(userRepository, times(1)).save(user);
     }
 }

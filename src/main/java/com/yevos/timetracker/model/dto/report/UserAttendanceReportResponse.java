@@ -16,6 +16,6 @@ public class UserAttendanceReportResponse {
 
     private Long userId;
     private String username;
-    private List<WorkShiftResponse> shifts; // Все факты реальной работы (DTO)
+    private List<WorkShiftResponse> shifts;
     private List<AbsenceResponse> absences;
 }

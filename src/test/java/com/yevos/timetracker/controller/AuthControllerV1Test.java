@@ -58,13 +58,12 @@ class AuthControllerV1Test {
         request.setEmail("user@example.com");
 
         doNothing().when(userService).registerUser(any(RegisterRequest.class));
-
         // When & Then
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$").doesNotExist()); // Проверяем, что тело ответа действительно пустое
+                .andExpect(jsonPath("$").doesNotExist());
     }
 
     @Test
@@ -76,10 +75,7 @@ class AuthControllerV1Test {
         loginRequest.setPassword("securePassword");
 
         AuthResponse expectedResponse = new AuthResponse("mocked-jwt-token-string");
-
-        // Настраиваем поведение вашего AuthService
         when(authService.login(any(LoginRequest.class))).thenReturn(expectedResponse);
-
         // When & Then
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

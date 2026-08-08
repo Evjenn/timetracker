@@ -66,14 +66,11 @@ class AttendanceReportServiceImplTest {
         when(workShiftRepository.findAllShiftsInPeriod(start, end)).thenReturn(List.of(mockShift));
         when(absenceRecordRepository.findAllAbsencesInPeriod(start.toLocalDate(), end.toLocalDate()))
                 .thenReturn(List.of(mockAbsence));
-
         // When
         List<UserAttendanceAggregate> result = reportService.getCompanyAttendanceData(start, end);
-
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-
         UserAttendanceAggregate aggregate = result.get(0);
         assertEquals(1L, aggregate.getUserId());
         assertEquals("taras_dev", aggregate.getUsername());
@@ -82,7 +79,8 @@ class AttendanceReportServiceImplTest {
 
         verify(userRepository, times(1)).findAll();
         verify(workShiftRepository, times(1)).findAllShiftsInPeriod(start, end);
-        verify(absenceRecordRepository, times(1)).findAllAbsencesInPeriod(start.toLocalDate(), end.toLocalDate());
+        verify(absenceRecordRepository, times(1)).findAllAbsencesInPeriod(start.toLocalDate(),
+                end.toLocalDate());
     }
 
     @Test
@@ -111,16 +109,14 @@ class AttendanceReportServiceImplTest {
         mockDto.setUser(mockUserResponse);
 
         when(workShiftRepository.findUserShiftsInPeriod(eq(userId), any(), any())).thenReturn(List.of(shift));
-        when(workShiftMapper.toResponse(shift)).thenReturn(mockDto); // 🟢 Обучаем маппер
-
+        when(workShiftMapper.toResponse(shift)).thenReturn(mockDto);
         // When
         String result = reportService.exportShiftsToCsv(userId, start, end);
-
         // Then
-        assertTrue(result.contains("Employee,Shift ID,Date,Shift Start,Shift End")); // Проверяем шапку
-        assertTrue(result.contains("10"));                          // Проверяем, что ID смены (10) записался
-        assertTrue(result.contains("100.0"));                       // Проверяем ставку
-        assertTrue(result.contains("900.0"));                       // Проверяем прибыль
+        assertTrue(result.contains("Employee,Shift ID,Date,Shift Start,Shift End"));
+        assertTrue(result.contains("10"));
+        assertTrue(result.contains("100.0"));
+        assertTrue(result.contains("900.0"));
 
         verify(workShiftMapper, times(1)).toResponse(shift);
     }
@@ -135,7 +131,6 @@ class AttendanceReportServiceImplTest {
         UserEntity user = new UserEntity();
         user.setUsername("taras_dev");
 
-        // Тестовая строка реальной работы
         WorkShift workShift = new WorkShift();
         workShift.setId(10L);
         workShift.setUser(user);
@@ -144,7 +139,6 @@ class AttendanceReportServiceImplTest {
         workShift.setRateAtTheTime(java.math.BigDecimal.valueOf(100.00));
         workShift.setProfit(java.math.BigDecimal.valueOf(900.00));
 
-        // Тестовая строка отпуска, которую якобы сгенерировал робот
         WorkShift absenceShift = new WorkShift();
         absenceShift.setId(11L);
         absenceShift.setUser(user);
@@ -157,17 +151,14 @@ class AttendanceReportServiceImplTest {
         mockDto.setTotalWorkingTime("09:00");
         mockDto.setClearWorkingTime("09:00");
 
-        com.yevos.timetracker.model.dto.response.UserShortResponse userShortDto = new com.yevos.timetracker.model.dto.response.UserShortResponse();
+        com.yevos.timetracker.model.dto.response.UserShortResponse userShortDto = new UserShortResponse();
         userShortDto.setUsername("taras_dev");
         mockDto.setUser(userShortDto);
 
-        // Обучаем репозиторий отдавать сразу ОБЕ строки из одной таблицы!
         when(workShiftRepository.findAllShiftsInPeriod(start, end)).thenReturn(List.of(workShift, absenceShift));
         when(workShiftMapper.toResponse(any(WorkShift.class))).thenReturn(mockDto);
-
         // When
         String result = reportService.exportCompanyShiftsToCsv(start, end);
-
         // Then
         assertNotNull(result);
         assertTrue(result.contains("taras_dev"));

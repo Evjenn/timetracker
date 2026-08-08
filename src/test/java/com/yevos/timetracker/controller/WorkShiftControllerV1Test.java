@@ -84,14 +84,12 @@ class WorkShiftControllerV1Test {
         // Given
         WorkShift mockShift = new WorkShift();
         when(workShiftService.startShift(eq(1L))).thenReturn(mockShift);
-
         // When & Then
         mockMvc.perform(post("/api/v1/shifts/start")
                         .with(user(principalUser))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
-                //Проверяем, что сервер вернул наше точное текстовое сообщение
                 .andExpect(content().string("Work shift started successfully"));
     }
 
@@ -100,9 +98,9 @@ class WorkShiftControllerV1Test {
     void startShift_AnonymousUser_ReturnsUnauthorized() throws Exception {
         // When & Then
         mockMvc.perform(post("/api/v1/shifts/start")
-                        .with(csrf()) // Пользователя .with(user(...)) принципиально НЕ добавляем
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized()); // Ожидаем, что Spring Security вернет 401
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -110,23 +108,21 @@ class WorkShiftControllerV1Test {
             "for authenticated user")
     void endShift_AuthenticatedUser_ReturnsOkAndTextMessage() throws Exception {
         // Given
-        WorkShift mockShift = new WorkShift(); // Метод сервиса возвращает объект, но контроллер его проигнорирует
+        WorkShift mockShift = new WorkShift();
         when(workShiftService.endShift(eq(1L))).thenReturn(mockShift);
-
         // When & Then
         mockMvc.perform(post("/api/v1/shifts/end")
                         .with(user(principalUser))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                // Проверяем, что эндпоинт возвращает именно наш новый красивый текст, а не JSON
                 .andExpect(content().string("Work shift closed successfully"));
     }
 
     @Test
     @DisplayName("POST /api/v1/shifts/end should return 401 Unauthorized when user is anonymous")
     void endShift_AnonymousUser_ReturnsUnauthorized() throws Exception {
-        // When & Then (Пользователя .with(user(...)) принципиально НЕ передаем)
+        // When & Then
         mockMvc.perform(post("/api/v1/shifts/end")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
@@ -142,15 +138,13 @@ class WorkShiftControllerV1Test {
         responseDto.setId(10L);
         responseDto.setTotalWorkingTime("08:30");
 
-        // Обучаем сервис принимать любые LocalDateTime границы, которые вычислит контроллер
         when(workShiftService.getShiftsInPeriod(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(List.of(mockShift));
         when(workShiftMapper.toResponse(mockShift)).thenReturn(responseDto);
-
         // When & Then
         mockMvc.perform(get("/api/v1/shifts/history")
-                        .with(user(principalUser)) // Наш залогиненный юзер с ID 1
-                        .param("startDate", "2026-07-01") // 🟢 Передаем чистые ISO даты
+                        .with(user(principalUser))
+                        .param("startDate", "2026-07-01")
                         .param("endDate", "2026-07-31")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -165,7 +159,6 @@ class WorkShiftControllerV1Test {
     void startBreak_AuthenticatedUser_ReturnsOkAndSuccessMessage() throws Exception {
         // Given
         doNothing().when(workShiftService).startBreak(eq(1L));
-
         // When & Then
         mockMvc.perform(post("/api/v1/shifts/break/start")
                         .with(user(principalUser))
@@ -190,7 +183,6 @@ class WorkShiftControllerV1Test {
     void endBreak_AuthenticatedUser_ReturnsOkAndSuccessMessage() throws Exception {
         // Given
         doNothing().when(workShiftService).endBreak(eq(1L));
-
         // When & Then
         mockMvc.perform(post("/api/v1/shifts/break/end")
                         .with(user(principalUser))
@@ -221,10 +213,9 @@ class WorkShiftControllerV1Test {
 
         when(workShiftService.getAdminAlerts()).thenReturn(List.of(mockShift));
         when(workShiftMapper.toResponse(mockShift)).thenReturn(responseDto);
-
         // When & Then
         mockMvc.perform(get("/api/v1/shifts/admin/alerts")
-                        .with(user(principalUser)) // В тесте пропускаем под любым юзером из-за мока JwtFilter
+                        .with(user(principalUser))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(777))
@@ -242,7 +233,6 @@ class WorkShiftControllerV1Test {
         when(workShiftService.getShiftByUsernameAndDate(eq("taras_dev"), any(), any()))
                 .thenReturn(mockShift);
         when(workShiftMapper.toResponse(mockShift)).thenReturn(responseDto);
-
         // When & Then
         mockMvc.perform(get("/api/v1/shifts/admin/search-shift")
                         .with(user(principalUser))
@@ -270,7 +260,8 @@ class WorkShiftControllerV1Test {
                         .param("note", "Forgot to log time")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Shift ID 12 successfully updated by Admin. Note: Forgot to log time"));
+                .andExpect(content().string("Shift ID 12 successfully updated by Admin. " +
+                        "Note: Forgot to log time"));
     }
 
 }

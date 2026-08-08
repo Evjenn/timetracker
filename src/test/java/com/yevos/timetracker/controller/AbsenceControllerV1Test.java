@@ -48,7 +48,7 @@ class AbsenceControllerV1Test {
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private UserDetailsImpl principalUser;
-    private UserDetailsImpl principalAdmin; // 🟢 Добавили виртуального администратора
+    private UserDetailsImpl principalAdmin;
 
     @MockitoBean
     private JwtFilter jwtFilter;
@@ -71,7 +71,6 @@ class AbsenceControllerV1Test {
             return null;
         }).when(jwtFilter).doFilter(any(), any(), any());
 
-        // Обычный пользователь для просмотра истории
         principalUser = new UserDetailsImpl(
                 1L,
                 "taras_dev",
@@ -80,7 +79,6 @@ class AbsenceControllerV1Test {
                 List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
 
-        // 🟢 Администратор для заведения новых отпусков персоналу
         principalAdmin = new UserDetailsImpl(
                 2L,
                 "super_admin",
@@ -106,15 +104,14 @@ class AbsenceControllerV1Test {
         mockResponse.setAbsenceType(AbsenceType.VACATION);
         mockResponse.setTotalDays(7);
 
-        // 🟢 Обучаем Mockito жестко сверяться по String username
         when(absenceService.createAbsence(eq("taras_dev"), any(AbsenceRequest.class))).thenReturn(mockRecord);
         when(absenceMapper.toResponse(mockRecord)).thenReturn(mockResponse);
 
         // When & Then
-        mockMvc.perform(post("/api/v1/absences/admin") // 🟢 Стучимся на новый админский URL
-                        .with(user(principalAdmin))   // 🟢 Передаем сессию администратора
+        mockMvc.perform(post("/api/v1/absences/admin")
+                        .with(user(principalAdmin))
                         .with(csrf())
-                        .param("username", "taras_dev") // 🟢 Передаем обязательный query-параметр имени
+                        .param("username", "taras_dev")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())

@@ -35,7 +35,7 @@ import org.springframework.http.HttpStatus;
 class AbsenceServiceImplTest {
 
     @Mock
-    private AbsenceRepository absenceRepository; // Оставляем ваше имя поля для совместимости с тестами
+    private AbsenceRepository absenceRepository;
     @Mock
     private WorkShiftRepository workShiftRepository;
     @Mock
@@ -45,15 +45,14 @@ class AbsenceServiceImplTest {
     private AbsenceServiceImpl absenceService;
 
     private Long userId;
-    private String testUsername; // 🟢 Заменили локальное числовое поле на строковый username
+    private String testUsername;
     private UserEntity mockUser;
     private AbsenceRequest defaultRequest;
 
     @BeforeEach
     void setUp() {
         userId = 1L;
-        testUsername = "taras_dev"; // Инициализируем имя для тестов
-
+        testUsername = "taras_dev";
         mockUser = new UserEntity();
         mockUser.setId(userId);
         mockUser.setUsername(testUsername);
@@ -69,21 +68,19 @@ class AbsenceServiceImplTest {
     @DisplayName("Should successfully create absence record when all conditions are valid")
     void createAbsence_ValidRequest_ReturnsSavedRecord() {
         // Given
-        // 🟢 Переобучили мок искать по уникальному username
         when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(mockUser));
         when(absenceRepository.findUserAbsencesInPeriod(eq(userId), any(), any())).thenReturn(Collections.emptyList());
         when(workShiftRepository.hasShiftsInPeriod(eq(userId), any(), any())).thenReturn(false);
-        when(absenceRepository.save(any(AbsenceRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(absenceRepository.save(any(AbsenceRecord.class))).thenAnswer(
+                inv -> inv.getArgument(0));
 
         // When
-        // 🟢 Передаем testUsername вместо старого ID
         AbsenceRecord result = absenceService.createAbsence(testUsername, defaultRequest);
-
         // Then
         assertNotNull(result);
         assertEquals(AbsenceType.VACATION, result.getAbsenceType());
         assertEquals(mockUser, result.getUser());
-        assertTrue(result.isApproved()); // Дополнительно проверяем флаг нашего приватного хелпера
+        assertTrue(result.isApproved());
         verify(absenceRepository, times(1)).save(any(AbsenceRecord.class));
     }
 
@@ -93,7 +90,6 @@ class AbsenceServiceImplTest {
         // Given
         defaultRequest.setStartDate(LocalDate.of(2026, 7, 26));
         defaultRequest.setEndDate(LocalDate.of(2026, 7, 20));
-
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () ->
                 absenceService.createAbsence(testUsername, defaultRequest));
@@ -109,13 +105,12 @@ class AbsenceServiceImplTest {
         when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(mockUser));
         when(absenceRepository.findUserAbsencesInPeriod(eq(userId), any(), any()))
                 .thenReturn(List.of(new AbsenceRecord()));
-
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () ->
                 absenceService.createAbsence(testUsername, defaultRequest));
 
-        // 🟢 Текст ошибки обновлен под каноны нового сервиса
-        assertEquals("This employee already has an active absence record inside this period", exception.getMessage());
+        assertEquals("This employee already has an active absence record inside this period",
+                exception.getMessage());
         assertEquals(HttpStatus.CONFLICT, exception.getStatus());
     }
 
@@ -126,13 +121,12 @@ class AbsenceServiceImplTest {
         when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(mockUser));
         when(absenceRepository.findUserAbsencesInPeriod(eq(userId), any(), any())).thenReturn(Collections.emptyList());
         when(workShiftRepository.hasShiftsInPeriod(eq(userId), any(), any())).thenReturn(true);
-
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () ->
                 absenceService.createAbsence(testUsername, defaultRequest));
 
-        // 🟢 Текст ошибки обновлен под каноны нового сервиса
-        assertEquals("Cannot register absence: employee has active working shifts within this period.", exception.getMessage());
+        assertEquals("Cannot register absence: employee has active working shifts within this period.",
+                exception.getMessage());
         assertEquals(HttpStatus.CONFLICT, exception.getStatus());
     }
 }

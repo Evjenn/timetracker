@@ -22,33 +22,26 @@ class AuthServiceImplTest {
 
     @Mock
     private AuthenticationManager authenticationManager;
-
     @Mock
     private JwtService jwtService;
-
     @InjectMocks
     private AuthServiceImpl authService;
 
     @Test
     @DisplayName("login() should return valid token when credentials are correct")
     void login_ValidCredentials_ReturnsAuthResponseWithToken() {
-
         // given
         LoginRequest request = new LoginRequest();
         request.setUsername("john");
         request.setPassword("1234");
 
         Authentication authentication = mock(Authentication.class);
-
         when(authenticationManager.authenticate(any()))
                 .thenReturn(authentication);
-
         when(jwtService.generateToken(authentication))
                 .thenReturn("fake-jwt");
-
         // when
         AuthResponse response = authService.login(request);
-
         // then
         assertEquals("fake-jwt", response.getToken());
     }

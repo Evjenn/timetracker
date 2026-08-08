@@ -90,10 +90,8 @@ class UserControllerV1Test {
         mockResponse.setId(1L);
         mockResponse.setHourlyRate(BigDecimal.valueOf(35.50));
 
-        // Обучаем моки под новые сигнатуры методов
         when(userService.updateHourlyRate(1L, BigDecimal.valueOf(35.50))).thenReturn(mockUser);
         when(userMapper.toResponse(mockUser)).thenReturn(mockResponse);
-
         // When & Then
         mockMvc.perform(put("/api/v1/users/rate")
                         .with(user(principalUser))
@@ -111,7 +109,6 @@ class UserControllerV1Test {
         // Given
         UpdateRateRequest request = new UpdateRateRequest();
         request.setHourlyRate(BigDecimal.valueOf(35.50));
-
         // When & Then (No .with(user(...)) provided)
         mockMvc.perform(put("/api/v1/users/rate")
                         .with(csrf())
@@ -136,7 +133,6 @@ class UserControllerV1Test {
 
         when(userService.updateProfile(eq(1L), anyString(), anyString())).thenReturn(mockUser);
         when(userMapper.toResponse(mockUser)).thenReturn(mockResponse);
-
         // When & Then
         mockMvc.perform(patch("/api/v1/users/profile")
                         .with(user(principalUser))
@@ -157,7 +153,6 @@ class UserControllerV1Test {
         request.setNewPassword("NewPassword123");
 
         doNothing().when(userService).updatePassword(eq(1L), any(UpdatePasswordRequest.class));
-
         // When & Then
         mockMvc.perform(put("/api/v1/users/password")
                         .with(user(principalUser))
@@ -172,19 +167,18 @@ class UserControllerV1Test {
     void deleteAccount_AuthenticatedUser_ReturnsNoContent() throws Exception {
         // Given
         doNothing().when(userService).deactivateUser(1L);
-
         // When & Then
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/users/me")
                         .with(user(principalUser))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent()); // Ожидаем 204 статус
+                .andExpect(status().isNoContent());
     }
 
     @Test
     @DisplayName("DELETE /api/v1/users/me should return 401 Unauthorized for anonymous user")
     void deleteAccount_AnonymousUser_ReturnsUnauthorized() throws Exception {
-        // When & Then (Пользователя .with(user(...)) не передаем)
+        // When & Then
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/users/me")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))

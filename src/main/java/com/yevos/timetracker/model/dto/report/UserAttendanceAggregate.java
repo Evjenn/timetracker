@@ -16,6 +16,6 @@ public class UserAttendanceAggregate {
 
     private Long userId;
     private String username;
-    private List<WorkShift> shifts; // Сырые сущности из базы
-    private List<AbsenceRecord> absences; // Сырые сущности из базы
+    private List<WorkShift> shifts;
+    private List<AbsenceRecord> absences;
 }

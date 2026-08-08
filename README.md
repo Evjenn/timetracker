@@ -1,96 +1,59 @@
-# ⏱️ Enterprise Time Tracker & HR Attendance Audit System
+# ⏱️ Workforce Time Tracker & Attendance Auditor
 
-![Java](https://shields.io)
-![Spring Boot](https://shields.io)
-![PostgreSQL](https://shields.io)
-![Docker](https://shields.io)
-![License](https://shields.io)
-
-Высокопроизводительная коммерческая ERP-система и тайм-трекер для автоматического кадрового аудита, 
-контроля рабочего времени сотрудников и финансовой аналитики. Проект спроектирован с жестким соблюдением стандартов **Clean Architecture**, изоляцией слоев и автоматизированным тестированием.
+A lightweight backend service designed for logging employee shifts, managing leave records, and automating attendance audits. Built with focus on clean architecture, strict layer isolation, and automated quality gates.
 
 ---
 
-## 🌟 Ключевой Функционал Системы
+## Tech Stack & Key Specs
 
-### 🧑‍💻 Для Сотрудников (Панель Пользователя)
-* **Интеллектуальный Тайм-Трекинг:** Управление жизненным циклом рабочих смен (Старт ➡️ Пауза ➡️ Возобновление ➡️ Конец).
-* **Каскадное закрытие перерывов:** Система автоматически закрывает активные паузы при завершении смены, исключая повреждение данных (Data Corruption).
-* **Календарь Отсутствий:** Просмотр личной истории официальных отпусков, отгулов и больничных листов.
-* **Финансовый Экспорт:** Скачивание личного финансового отчета за любой месяц в формате Microsoft Excel CSV с автоматическим встраиванием **BOM-маркера** для идеального отображения кириллицы.
-
-### 👑 Для Администрации (Панель Бригадира / HR)
-* **Управление Сменами по Username:** Ручная корректировка ошибочных смен сотрудников по их текстовому имени без необходимости ручного поиска цифровых ID в базе данных.
-* **Кадровые Отпуска Back-Office:** Регистрация больничных и отпусков персонала администратором с **жесткой защитой от наложений** (Overlap Protection) на живые рабочие смены или другие отпуска.
-* **Сводный Древовидный Табель (JSON):** Высокоэффективная агрегация данных (всего за 3 быстрых SQL-запроса) для выдачи фронтенду полной картины посещаемости по всей компании.
-* **Глобальная Ведомость (Excel CSV):** Выгрузка сквозного хронологического отчета по всем сотрудникам компании за гибкий диапазон дат (`YYYY-MM-DD`).
-
-### 🤖 Фоновый Робот-Аудитор (Cron Scheduler)
-* Каждый будний день в **20:00** автоматический планировщик сканирует базу данных:
-    * Находит незавершенные смены и принудительно закрывает их, списывая штрафной лимит на забытые перерывы (+60 минут).
-    * Выявляет прогульщиков, у которых нет смен, и выставляет им аварийный статус `FORGOTTEN_START_ALERT` в пул нарушителей для бригадира.
-    * **Умное распознавание отпускников:** Робот заглядывает в таблицу отпусков и, если человек отдыхает официально, создает тихую системную строку-заглушку `APPROVED_ABSENCE`, блокируя появление ложных штрафов.
-    * **Ретроспективное исправление:** Админ может беспрепятственно вносить больничные "задним числом" поверх штрафов робота — SQL-логика репозитория автоматически проигнорирует ложные алерты.
+* **Core Framework:** Spring Boot 4.0.6 (Data JPA, Web MVC, Security, Validation)
+* **Language Runtime:** Java 25
+* **Database & Migrations:** PostgreSQL, Flyway Migration
+* **Security:** JWT Authentication
+* **API Documentation:** Swagger UI
+* **DevOps:** Integrated Docker & `spring-boot-docker-compose` lifecycle binding
+* **Code Quality & Testing:** JUnit 5, Mockito, MockMvc, JaCoCo, Checkstyle
 
 ---
 
-## 📐 Архитектура проекта и Чистый Код
+## Key Functionality
 
-Проект разработан по строгим промышленным стандартам Enterprise-разработки:
-1. **Изоляция слоев (Low Coupling):** Бизнес-логика (Сервисы) оперирует исключительно чистыми доменными сущностями и ничего не знает про веб-слой, HTTP-параметры и DTO.
-2. **Валидация на границе (Controller-Only Mapping):** Преобразование сущностей в DTO через MapStruct/классические мапперы происходит строго на уровне Контроллеров.
-3. **Безопасность по спецификации REST:** Все админские ручки защищены ролевой моделью (`hasRole("ADMIN")`) и вынесены на специализированные пути `/admin/**`. Потоковое скачивание файлов упаковано в безопасный тип `ResponseEntity<byte[]>`.
-4. **Статический анализ кода:** Подключен плагин **Checkstyle** для принудительного контроля форматирования, отступов и минимизации когнитивной сложности методов (Cognitive Complexity < 15).
+### Employee Workspace
+* **Shift Lifecycle:** Operations for managing shift status (Start ➡️ Pause ➡️ Resume ➡️ End).
+* **Cascade Break Closure:** Automatically closes active breaks when a shift is stopped to protect data integrity.
+* **Financial Export:** On-demand download of monthly wage reports as Excel-ready CSV files (embedded with UTF-8 BOM marker for clean encoding).
 
----
+### HR & Administrative Controls
+* **Username-Driven Management:** Manual shift corrections and absence registration via a simple string `username` parameter.
+* **Overlap Protection:** Hard blocking mechanisms preventing overlapping absence records or conflicting work shifts.
+* **Consolidated Reports:** Attendance reports aggregating cross-company data.
 
-## 🛠️ Технологический Стек
-
-* **Backend:** Java 17, Spring Boot 3.x (Spring Security, Spring Data JPA, Spring Scheduler).
-* **Database:** PostgreSQL 15, Flyway (Миграции схемы данных).
-* **Testing:** JUnit 5, Mockito (Mockito-моки контроллеров через `@MockitoBean`), MockMvc (Интеграционное тестирование веб-слоя под виртуальными сессиями Spring Security), JaCoCo (Контроль покрытия кода).
-* **API Documentation:** Springdoc-openapi (Swagger UI) с детальным документированием параметров и ISO-форматов дат.
-* **DevOps:** Docker, Docker Compose (Оркестрация бэкенда и БД в изолированных сетях).
-
----
-
-## 🚀 Быстрый Запуск через Docker
-
-Для запуска всей системы (Бэкенд + База Данных PostgreSQL + Накат миграций Flyway) вам нужна всего одна команда.
-
-### 1. Сборка и запуск проекта (после изменения кода):
-```bash
-docker compose up --build -d
-```
-
-### 2. Обычный повседневный старт (из готового кэша за 2 секунды):
-```bash
-docker compose up -d
-```
-
-### 3. Полная остановка сервера с сохранением данных:
-```bash
-docker compose down
-```
-
-### 4. Посмотреть живые логи бэкенд-приложения в реальном времени:
-```bash
-docker compose logs -f rest-api-app
-```
-
-После старта контейнеров интерактивная документация **Swagger UI** будет доступна по адресу:
-👉 `http://localhost:8080/swagger-ui.html`
+### Automated Auditor (`AuditScheduler`)
+* Triggered automatically via a cron daemon every weekday at 20:00:
+  * **Auto-Closure:** Force-closes forgotten unsubmitted shifts and writes a 60-minute penalty flag onto abandoned breaks.
+  * **Truancy Alert:** Tags missed work days with a `FORGOTTEN_START_ALERT` flag for administrative screening.
+  * **Leave Awareness:** Automatically detects official active leave records (vacations/sick leaves) and logs them as non-penalizing `APPROVED_ABSENCE` blocks instead of truant entries.
+  * **Retroactive Support:** Allows administrators to register leaves retroactively over past truant marks without locking the system workflow.
 
 ---
 
-## 🧪 Запуск Тестов и Контроль Качества
-
-Проект защищен пирамидой тестирования, исключающей появление регрессионных багов в калькуляторах времени или финансовой логике `BigDecimalHALF_UP`.
-
-Запуск прогона всех тестов и проверки стилистики Checkstyle:
-```bash
-mvn clean test checkstyle:check
+### Run the application via Docker Compose
+Open Windows PowerShell in the root directory and execute:
+```powershell
+docker compose up --build
 ```
 
 ---
-*Разработано в рамках демонстрации навыков проектирования отказоустойчивых ERP-систем и архитектурной изоляции слоев веб-приложений на Java.*
+
+## API Documentation & Testing
+
+Once the containers are successfully initialized, the interactive documentation endpoint is available at:
+`http://localhost:8080/swagger-ui.html`
+* *Note: Pre-configured credentials for both Administrator and Regular User accounts are explicitly documented right inside the description of this `/api/v1/auth/login` endpoint.*
+### How to use Authorized Endpoints in Swagger:
+1. Generate a valid token using the Auth Controller (`/api/v1/auth/login`).
+2. Click the **Authorize** 🔓 button in the top right corner of the Swagger page.
+3. Paste your raw token into the **Value** field (Swagger prepends `Bearer` automatically).
+4. Click **Authorize** and close the dialog. Secure endpoints (like `/api/v1/shifts`) are now ready to be tested!
+
+---

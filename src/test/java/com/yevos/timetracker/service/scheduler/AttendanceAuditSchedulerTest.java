@@ -39,7 +39,7 @@ class AttendanceAuditSchedulerTest {
     @Mock
     private WorkShiftRepository workShiftRepository;
     @Mock
-    private AbsenceRepository absenceRepository; // 🟢 Мокаем новый репозиторий отпусков
+    private AbsenceRepository absenceRepository;
     @InjectMocks
     private AttendanceAuditScheduler auditScheduler;
     private UserEntity mockUser;
@@ -66,13 +66,11 @@ class AttendanceAuditSchedulerTest {
         when(userRepository.findAll()).thenReturn(List.of(mockUser));
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(mockUser.getId()))
                 .thenReturn(Optional.of(forgottenShift));
-
         // When
         auditScheduler.executeDailyAudit();
-
         // Then
         assertNull(forgottenShift.getCurrentBreakStartTime());
-        assertEquals(75, forgottenShift.getBreakDurationMinutes()); // 15 + 60 минут лимита
+        assertEquals(75, forgottenShift.getBreakDurationMinutes());
         assertNotNull(forgottenShift.getEndTime());
         assertEquals("AUTO_CLOSED_AT_20_00", forgottenShift.getStatusNote());
         assertEquals(0, BigDecimal.ZERO.compareTo(forgottenShift.getProfit()));
@@ -81,33 +79,33 @@ class AttendanceAuditSchedulerTest {
     }
 
     @Test
-    @DisplayName("executeDailyAudit() should create forgotten shift alert when user has no active shift and no absence record")
+    @DisplayName("executeDailyAudit() should create forgotten shift alert when user has no active shift "
+            + "and no absence record")
     void executeDailyAudit_UserDidNotStartShiftAndNoVacation_CreatesForgottenStartAlertRow() {
         // Given
         when(userRepository.findAll()).thenReturn(List.of(mockUser));
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(mockUser.getId())).thenReturn(Optional.empty());
-        when(workShiftRepository.findUserShiftsInPeriod(eq(mockUser.getId()), any(), any())).thenReturn(Collections.emptyList());
+        when(workShiftRepository.findUserShiftsInPeriod(eq(mockUser.getId()), any(),
+                any())).thenReturn(Collections.emptyList());
 
-        // 🟢 Обучаем репозиторий говорить, что отпусков на сегодня НЕТ (возвращаем пустой список)
-        when(absenceRepository.findUserAbsencesInPeriod(eq(mockUser.getId()), any(), any())).thenReturn(Collections.emptyList());
+        when(absenceRepository.findUserAbsencesInPeriod(eq(mockUser.getId()), any(),
+                any())).thenReturn(Collections.emptyList());
 
         ArgumentCaptor<WorkShift> shiftCaptor = ArgumentCaptor.forClass(WorkShift.class);
-
         // When
         auditScheduler.executeDailyAudit();
-
         // Then
         verify(workShiftRepository, times(1)).save(shiftCaptor.capture());
         WorkShift savedShift = shiftCaptor.getValue();
 
         assertNotNull(savedShift);
-        // 🔴 Убеждаемся, что робот выставил ШТРАФНОЙ АЛЕРТ, так как отпуска не было
         assertEquals("FORGOTTEN_START_ALERT", savedShift.getStatusNote());
         assertEquals(0, BigDecimal.ZERO.compareTo(savedShift.getProfit()));
     }
 
     @Test
-    @DisplayName("executeDailyAudit() should create approved absence row when user did not start shift due to official vacation")
+    @DisplayName("executeDailyAudit() should create approved absence row when user did not start shift "
+            + "due to official vacation")
     void executeDailyAudit_UserOnOfficialVacation_CreatesSilentApprovedAbsenceRow() {
         // Given
         AbsenceRecord mockVacation = new AbsenceRecord();
@@ -117,22 +115,20 @@ class AttendanceAuditSchedulerTest {
 
         when(userRepository.findAll()).thenReturn(List.of(mockUser));
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(mockUser.getId())).thenReturn(Optional.empty());
-        when(workShiftRepository.findUserShiftsInPeriod(eq(mockUser.getId()), any(), any())).thenReturn(Collections.emptyList());
+        when(workShiftRepository.findUserShiftsInPeriod(eq(mockUser.getId()), any(),
+                any())).thenReturn(Collections.emptyList());
 
-        // 🟢 Обучаем репозиторий возвращать активный отпуск сотрудника на сегодня
-        when(absenceRepository.findUserAbsencesInPeriod(eq(mockUser.getId()), any(), any())).thenReturn(List.of(mockVacation));
+        when(absenceRepository.findUserAbsencesInPeriod(eq(mockUser.getId()), any(),
+                any())).thenReturn(List.of(mockVacation));
 
         ArgumentCaptor<WorkShift> shiftCaptor = ArgumentCaptor.forClass(WorkShift.class);
-
         // When
         auditScheduler.executeDailyAudit();
-
         // Then
         verify(workShiftRepository, times(1)).save(shiftCaptor.capture());
         WorkShift savedShift = shiftCaptor.getValue();
 
         assertNotNull(savedShift);
-        // 🟩 Проверяем триумф нашей логики: робот создал мирную отпускную заглушку вместо наезда!
         assertEquals("APPROVED_ABSENCE: VACATION", savedShift.getStatusNote());
         assertEquals(0, BigDecimal.ZERO.compareTo(savedShift.getProfit()));
         assertEquals(0, savedShift.getBreakDurationMinutes());

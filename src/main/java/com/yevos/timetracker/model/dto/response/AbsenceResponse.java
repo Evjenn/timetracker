@@ -14,5 +14,5 @@ public class AbsenceResponse {
     private LocalDate endDate;
     private AbsenceType absenceType;
     private String reason;
-    private int totalDays; // Бэкенд сам посчитает и отдаст фронтенду количество дней!
+    private int totalDays;
 }

@@ -49,14 +49,12 @@ public class UserControllerV1 {
             @AuthenticationPrincipal UserDetailsImpl userPrincipal,
             @Valid @RequestBody UpdateUserRequest request) {
 
-        // Передаем в сервис чистые строки из DTO
         UserEntity updatedUser = userService.updateProfile(
                 userPrincipal.getId(),
                 request.getUsername(),
                 request.getEmail()
         );
 
-        // Возвращаем обновленный профиль через маппер наружу
         return ResponseEntity.ok(userMapper.toResponse(updatedUser));
     }
 

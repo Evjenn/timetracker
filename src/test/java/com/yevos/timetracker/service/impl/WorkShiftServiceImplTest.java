@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.yevos.timetracker.exception.BaseException;
-import com.yevos.timetracker.mapper.WorkShiftMapper;
 import com.yevos.timetracker.model.entity.UserEntity;
 import com.yevos.timetracker.model.entity.WorkShift;
 import com.yevos.timetracker.repository.UserRepository;
@@ -43,11 +42,10 @@ class WorkShiftServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        // Готовим тестового пользователя перед каждым тестом
         testUser = new UserEntity();
         testUser.setId(1L);
         testUser.setUsername("taras_dev");
-        testUser.setHourlyRate(BigDecimal.valueOf(20.00)); // Ставка $20 в час
+        testUser.setHourlyRate(BigDecimal.valueOf(20.00));
     }
 
     @Test
@@ -56,11 +54,10 @@ class WorkShiftServiceImplTest {
         // Given
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(1L)).thenReturn(Optional.empty());
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
+        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
         // When
         WorkShift createdShift = workShiftService.startShift(1L);
-
         // Then
         assertNotNull(createdShift);
         assertEquals(testUser, createdShift.getUser());
@@ -78,7 +75,6 @@ class WorkShiftServiceImplTest {
         // Given
         WorkShift existingShift = new WorkShift();
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(1L)).thenReturn(Optional.of(existingShift));
-
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () -> {
             workShiftService.startShift(1L);
@@ -107,13 +103,10 @@ class WorkShiftServiceImplTest {
                 .thenReturn(Optional.of(activeShift));
         when(workShiftRepository.save(any(WorkShift.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-
         // When
         WorkShift completedShift = workShiftService.endShift(1L);
-
         // Then
         assertNotNull(completedShift.getEndTime());
-
         // 2 hours of work * $20/hour = $40.00 expected profit
         BigDecimal expectedProfit = BigDecimal.valueOf(40.00).setScale(2);
         assertEquals(expectedProfit, completedShift.getProfit());
@@ -127,14 +120,13 @@ class WorkShiftServiceImplTest {
         // Given
         WorkShift activeShift = new WorkShift();
         activeShift.setId(10L);
-        activeShift.setCurrentBreakStartTime(null); // Еще не на паузе
+        activeShift.setCurrentBreakStartTime(null);
 
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(1L)).thenReturn(Optional.of(activeShift));
-        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
+        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
         // When
         workShiftService.startBreak(1L);
-
         // Then
         assertNotNull(activeShift.getCurrentBreakStartTime());
         verify(workShiftRepository, times(1)).save(activeShift);
@@ -146,19 +138,16 @@ class WorkShiftServiceImplTest {
         // Given
         WorkShift activeShift = new WorkShift();
         activeShift.setId(10L);
-        activeShift.setBreakDurationMinutes(15); // Уже было 15 минут пауз до этого
-        // Имитируем, что перерыв начался 10 минут назад
+        activeShift.setBreakDurationMinutes(15);
         activeShift.setCurrentBreakStartTime(LocalDateTime.now().minusMinutes(10));
 
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(1L)).thenReturn(Optional.of(activeShift));
-        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
+        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
         // When
         workShiftService.endBreak(1L);
-
         // Then
-        assertNull(activeShift.getCurrentBreakStartTime()); // Временное поле очистилось
-        // К 15 старым минутам прибавились 10 новых. Из-за секунд округление может дать 10 или 11 минут
+        assertNull(activeShift.getCurrentBreakStartTime());
         assertTrue(activeShift.getBreakDurationMinutes() >= 25);
         verify(workShiftRepository, times(1)).save(activeShift);
     }
@@ -170,11 +159,10 @@ class WorkShiftServiceImplTest {
         Long userId = 1L;
         UserEntity userWithoutRate = new UserEntity();
         userWithoutRate.setId(userId);
-        userWithoutRate.setHourlyRate(null); // Имитируем отсутствие ставки
+        userWithoutRate.setHourlyRate(null);
 
         when(workShiftRepository.findByUserIdAndEndTimeIsNull(userId)).thenReturn(Optional.empty());
         when(userRepository.findById(userId)).thenReturn(Optional.of(userWithoutRate));
-
         // When & Then
         BaseException exception = assertThrows(BaseException.class, () -> {
             workShiftService.startShift(userId);
@@ -192,25 +180,21 @@ class WorkShiftServiceImplTest {
         Long shiftId = 12L;
         WorkShift existingShift = new WorkShift();
         existingShift.setId(shiftId);
-        // Имитируем старую ставку (например, 50.00)
         existingShift.setRateAtTheTime(BigDecimal.valueOf(50.00));
         existingShift.setBreakDurationMinutes(0);
 
-        // Админ хочет выставить время: ровно 2 часа работы (120 минут)
         LocalDateTime newStart = LocalDateTime.of(2026, 7, 19, 10, 0);
         LocalDateTime newEnd = LocalDateTime.of(2026, 7, 19, 12, 0);
 
         when(workShiftRepository.findById(shiftId)).thenReturn(Optional.of(existingShift));
-        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(inv -> inv.getArgument(0));
-
+        when(workShiftRepository.save(any(WorkShift.class))).thenAnswer(
+                inv -> inv.getArgument(0));
         // When
         workShiftService.adminUpdateShift(shiftId, newStart, newEnd, 0, "Fixed by foreman");
-
         // Then
         assertEquals(newStart, existingShift.getStartTime());
         assertEquals(newEnd, existingShift.getEndTime());
         assertEquals("RESOLVED_BY_ADMIN: Fixed by foreman", existingShift.getStatusNote());
-        // 🟢 ПРОВЕРЯЕМ МАТЕМАТИКУ: 2 часа * 50.00 = 100.00 прибыли!
         assertEquals(0, BigDecimal.valueOf(100.00).compareTo(existingShift.getProfit()));
         verify(workShiftRepository, times(1)).save(existingShift);
     }
@@ -227,18 +211,14 @@ class WorkShiftServiceImplTest {
         forgottenShift.setId(2L);
         forgottenShift.setStatusNote("FORGOTTEN_START");
 
-        // Обучаем репозиторий возвращать наши заготовленные списки
         when(workShiftRepository.findByStatusNoteStartingWith("AUTO_CLOSED"))
                 .thenReturn(List.of(autoClosedShift));
         when(workShiftRepository.findByStatusNoteStartingWith("FORGOTTEN_START"))
                 .thenReturn(List.of(forgottenShift));
-
         // When
         List<WorkShift> result = workShiftService.getAdminAlerts();
-
         // Then
         assertNotNull(result);
-        // 🟢 ПРОВЕРЯЕМ СЛИЯНИЕ: 1 автозакрытая + 1 забытая = всего 2 алертируемые смены в пуле админа!
         assertEquals(2, result.size());
         assertTrue(result.contains(autoClosedShift));
         assertTrue(result.contains(forgottenShift));

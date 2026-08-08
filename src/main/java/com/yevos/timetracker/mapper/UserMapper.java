@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
 
     public UserResponse toResponse(UserEntity user) {
+
         if (user == null) {
             return null;
         }
-
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setUsername(user.getUsername());

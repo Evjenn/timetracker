@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 public class AbsenceMapper {
 
     public AbsenceResponse toResponse(AbsenceRecord absenceRecord) {
+
         if (absenceRecord == null) {
             return null;
         }
-
         AbsenceResponse response = new AbsenceResponse();
         response.setId(absenceRecord.getId());
         response.setStartDate(absenceRecord.getStartDate());
@@ -26,9 +26,7 @@ public class AbsenceMapper {
     }
 
     private int calculateTotalDays(LocalDate start, LocalDate end) {
-        // Метод toEpochDay() возвращает количество дней с 1970 года.
-        // Разница между ними — это чистые дни. И мы сразу приводим
-        // результат к математическому типу int.
+
         return (int) (end.toEpochDay() - start.toEpochDay()) + 1;
     }
 }

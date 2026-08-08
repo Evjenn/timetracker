@@ -30,13 +30,11 @@ class RegisterRequestValidationTest {
         // Given
         RegisterRequest request = new RegisterRequest();
         request.setUsername("validUser");
-        request.setPassword("Password123"); // Has Upper, Lower and Digit
-        request.setHourlyRate(BigDecimal.valueOf(50.25)); // 2 decimals, fits digits(6,2)
+        request.setPassword("Password123");
+        request.setHourlyRate(BigDecimal.valueOf(50.25));
         request.setEmail("user@example.com");
-
         // When
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);
-
         // Then
         assertTrue(violations.isEmpty(), "Expected no validation errors");
     }
@@ -50,10 +48,8 @@ class RegisterRequestValidationTest {
         request.setPassword("Password123");
         request.setHourlyRate(BigDecimal.valueOf(10.00));
         request.setEmail("invalid-email-format"); // Missing @ and domain
-
         // When
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);
-
         // Then
         assertFalse(violations.isEmpty());
         long emailErrors = violations.stream()
@@ -69,12 +65,10 @@ class RegisterRequestValidationTest {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("validUser");
         request.setPassword("Password123");
-        request.setHourlyRate(BigDecimal.valueOf(0.00)); // Zero not allowed because inclusive = false
+        request.setHourlyRate(BigDecimal.valueOf(0.00));
         request.setEmail("user@example.com");
-
         // When
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);
-
         // Then
         assertFalse(violations.isEmpty());
         boolean hasMinRateError = violations.stream()
@@ -89,12 +83,10 @@ class RegisterRequestValidationTest {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("validUser");
         request.setPassword("Password123");
-        request.setHourlyRate(new BigDecimal("1000000.00")); // 7 integer digits (max allowed is 6)
+        request.setHourlyRate(new BigDecimal("1000000.00"));
         request.setEmail("user@example.com");
-
         // When
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);
-
         // Then
         assertFalse(violations.isEmpty());
     }

@@ -5,6 +5,7 @@ import com.yevos.timetracker.model.dto.request.RegisterRequest;
 import com.yevos.timetracker.model.dto.response.AuthResponse;
 import com.yevos.timetracker.service.AuthService;
 import com.yevos.timetracker.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,13 @@ public class AuthControllerV1 {
     }
 
     @PostMapping("/login")
+    @Operation(
+            summary = "Authenticate user and return JWT token",
+            description = """
+                    * **ADMIN:** Username: `super_admin` | Password: `TimetrackerAdmin123`
+                    * **USER:** Username: `taras_dev` | Password: `RawPassword123`
+                    """
+    )
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest request) {
 

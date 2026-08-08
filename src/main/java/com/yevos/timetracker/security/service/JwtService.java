@@ -48,7 +48,7 @@ public class JwtService {
                     .getExpiration()
                     .after(new Date());
         } catch (JwtException | IllegalArgumentException e) {
-            // Если токен протух, изменен или сломан — он просто невалиден
+
             return false;
         }
     }

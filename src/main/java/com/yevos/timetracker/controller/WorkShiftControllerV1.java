@@ -30,23 +30,19 @@ public class WorkShiftControllerV1 {
     private final WorkShiftService workShiftService;
     private final WorkShiftMapper workShiftMapper;
 
-    // Внедряем маппер вместе с сервисом
     public WorkShiftControllerV1(WorkShiftService workShiftService,
                                  WorkShiftMapper workShiftMapper) {
         this.workShiftService = workShiftService;
         this.workShiftMapper = workShiftMapper;
     }
 
-    // 1. START SHIFT
     @PostMapping("/start")
     public ResponseEntity<String> startShift(
             @AuthenticationPrincipal UserDetailsImpl userPrincipal) {
         workShiftService.startShift(userPrincipal.getId());
-        // Конвертируем сущность в DTO перед отправкой клиенту
         return ResponseEntity.status(HttpStatus.CREATED).body("Work shift started successfully");
     }
 
-    // 3. END SHIFT
     @PostMapping("/end")
     public ResponseEntity<String> endShift(@AuthenticationPrincipal UserDetailsImpl userPrincipal) {
         workShiftService.endShift(userPrincipal.getId());
@@ -66,7 +62,6 @@ public class WorkShiftControllerV1 {
         return ResponseEntity.ok("Break ended successfully. Total duration updated.");
     }
 
-    // 4. GET SHIFTS HISTORY FOR PERIOD
     @GetMapping("/history")
     @Operation(summary = "Get user work shift history filtered by date range in format YYYY-MM-DD")
     public ResponseEntity<List<WorkShiftResponse>> getShiftsHistory(
@@ -76,14 +71,11 @@ public class WorkShiftControllerV1 {
             @RequestParam("endDate")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-        // Конвертируем LocalDate в LocalDateTime для передачи в сервис
-        // (от 00:00:00 первого дня до 23:59:59 крайнего дня)
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
         List<WorkShift> shifts = workShiftService.getShiftsInPeriod(userPrincipal.getId(),
                 startDateTime, endDateTime);
-
         List<WorkShiftResponse> response = shifts.stream()
                 .map(workShiftMapper::toResponse)
                 .toList();
@@ -116,24 +108,20 @@ public class WorkShiftControllerV1 {
             @RequestParam("username") String username,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-        // Вычисляем строгие границы одних суток
         LocalDateTime startDateTime = date.atStartOfDay();
         LocalDateTime endDateTime = date.atTime(23, 59, 59);
 
         WorkShift shift = workShiftService.getShiftByUsernameAndDate(username,
                 startDateTime, endDateTime);
 
-        // Мапим в наш красивый DTO с форматированным временем
         return ResponseEntity.ok(workShiftMapper.toResponse(shift));
     }
 
     @GetMapping("/admin/alerts")
     @Operation(summary = "Get all unresolved attendance alerts for administrator audit")
     public ResponseEntity<List<WorkShiftResponse>> getAdminAlerts() {
-        // 1. Сервис возвращает список сырых сущностей-нарушителей
-        List<WorkShift> alerts = workShiftService.getAdminAlerts();
 
-        // 2. Контроллер сам крутит ваш маппер, соблюдая стиль всего проекта
+        List<WorkShift> alerts = workShiftService.getAdminAlerts();
         List<WorkShiftResponse> response = alerts.stream()
                 .map(workShiftMapper::toResponse)
                 .toList();

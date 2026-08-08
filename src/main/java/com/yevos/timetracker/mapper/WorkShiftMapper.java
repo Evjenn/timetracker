@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
 public class WorkShiftMapper {
 
     public WorkShiftResponse toResponse(WorkShift shift) {
+
         if (shift == null) {
             return null;
         }
-
         WorkShiftResponse response = new WorkShiftResponse();
         response.setId(shift.getId());
         response.setStartTime(shift.getStartTime());
@@ -38,6 +38,7 @@ public class WorkShiftMapper {
     }
 
     private String calculateTotalWorkingTime(WorkShift shift) {
+
         LocalDateTime endPoint = shift.getEndTime() != null
                 ? shift.getEndTime() : LocalDateTime.now();
         long totalMinutes = Duration.between(shift.getStartTime(), endPoint).toMinutes();
@@ -45,6 +46,7 @@ public class WorkShiftMapper {
     }
 
     private String calculateClearWorkingTime(WorkShift shift) {
+
         LocalDateTime endPoint = shift.getEndTime() != null
                 ? shift.getEndTime() : LocalDateTime.now();
         long totalMinutes = Duration.between(shift.getStartTime(), endPoint).toMinutes();
@@ -56,6 +58,7 @@ public class WorkShiftMapper {
     }
 
     private String formatMinutes(long totalMinutes) {
+
         long hours = totalMinutes / 60;
         long minutes = totalMinutes % 60;
         return String.format("%02d:%02d", hours, minutes);

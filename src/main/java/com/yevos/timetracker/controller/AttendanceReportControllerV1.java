@@ -50,7 +50,6 @@ public class AttendanceReportControllerV1 {
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
         var aggregates = reportService.getCompanyAttendanceData(startDateTime, endDateTime);
-
         var response = aggregates.stream().map(agg -> {
             List<WorkShiftResponse> shifts = agg.getShifts().stream()
                     .map(workShiftMapper::toResponse).toList();
@@ -72,18 +71,11 @@ public class AttendanceReportControllerV1 {
             @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate endDate) {
 
-        // 1. Вычисляем точные границы времени для всего периода
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
-
-        // 2. Вызываем наш отрефакторенный, чистый метод сервиса аналитики
         String csvData = reportService.exportCompanyShiftsToCsv(startDateTime, endDateTime);
 
-        // 3. Упаковываем с помощью вашего приватного BOM-метода (защита кириллицы в Excel)
         byte[] fileBytes = addBomToCsvBytes(csvData);
-
-        // 4. Формируем красивое говорящее имя файла, например:
-        // company_report_2026-07-01_2026-07-31.csv
         String fileName = String.format("company_report_%s_%s.csv", startDate, endDate);
 
         return ResponseEntity.ok()
@@ -103,10 +95,8 @@ public class AttendanceReportControllerV1 {
         int lastDay = LocalDate.of(year, month, 1).lengthOfMonth();
         LocalDateTime end = LocalDateTime.of(year, month, lastDay, 23, 59, 59);
 
-        // Получаем готовую текстовую CSV-таблицу из сервиса
         String csvData = reportService.exportShiftsToCsv(userPrincipal.getId(), start, end);
-
-        byte[] fileBytes = addBomToCsvBytes(csvData); // Ваш приватный метод с BOM
+        byte[] fileBytes = addBomToCsvBytes(csvData);
         String fileName = String.format("report_%d_%d.csv", month, year);
 
         return ResponseEntity.ok()
